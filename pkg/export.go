@@ -2,7 +2,6 @@ package spacer
 
 import (
 	"context"
-	"fmt"
 )
 
 // Database is an interface describing DBMS client that creates dump files
@@ -16,24 +15,26 @@ type Storage interface {
 }
 
 // Export creates dump and saves it using provided Database and Storage objects
-func Export(d Database, s Storage) error {
-	dumpFile, err := NewTempFile()
+func Export(d Database, s Storage, enc *Encryptor) (string, error) {
+	dumpFile, err := NewTempFile(enc)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer dumpFile.Remove()
 
 	if err := d.Dump(dumpFile); err != nil {
-		return err
+		return "", err
+	}
+
+	if err := dumpFile.Encrypt(); err != nil {
+		return "", err
 	}
 
 	url, err := s.Save(context.Background(), dumpFile)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	fmt.Println("dump saved at:", url)
-
-	return nil
+	return url, nil
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/zhashkevych/spacer/pkg"
 	"log"
@@ -8,6 +9,7 @@ import (
 )
 
 func main() {
+	fmt.Println("STARTING SPACER")
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -32,7 +34,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := spacer.Export(postgres, saver); err != nil {
+	key := os.Getenv("ENCRYPTION_KEY")
+	encryptor, err := spacer.NewEncryptor([]byte(key))
+	if err != nil {
 		log.Fatal(err)
 	}
+
+	url, err := spacer.Export(postgres, saver, encryptor)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("dump successfully exported to", url)
 }
