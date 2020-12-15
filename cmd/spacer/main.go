@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/joho/godotenv"
-	"github.com/zhashkevych/spacer/pkg"
+	spacer "github.com/zhashkevych/spacer/pkg"
+	"io/ioutil"
 	"log"
 	"os"
 )
@@ -34,8 +35,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	key := os.Getenv("ENCRYPTION_KEY")
-	encryptor, err := spacer.NewEncryptor([]byte(key))
+	keyPath := os.Getenv("KEY_FILE")
+	key, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	encryptor, err := spacer.NewEncryptor(key)
 	if err != nil {
 		log.Fatal(err)
 	}

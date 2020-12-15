@@ -2,12 +2,18 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"math/rand"
 	"time"
 )
 
-const charset = "abcdefghijklmnopqrstuvwxyz" +
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" + "!@#$%^&*()_+}:><?"
+// TODO: write to file
+
+const (
+	charset  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+}:><?"
+	filename = "enc.key"
+)
 
 func main() {
 	rand.Seed(time.Now().Unix())
@@ -17,5 +23,9 @@ func main() {
 		key[i] = charset[rand.Intn(len(charset))]
 	}
 
-	fmt.Println("New encryption key:", string(key))
+	if err := ioutil.WriteFile(filename, key, 0777); err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("New encryption key generated in", filename)
 }
