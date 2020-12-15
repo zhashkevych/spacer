@@ -2,7 +2,7 @@
 .SILENT:
 
 build:
-	go build -o ./.bin/spacer
+	go build -o ./.bin/spacer ./cmd/main.go
 
-run: build
-	./.bin/spacer -bucket jewerly -endpoint ams3.digitaloceanspaces.com -db_port 5436
+spacer: build
+	./.bin/spacer

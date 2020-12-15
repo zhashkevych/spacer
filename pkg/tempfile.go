@@ -1,4 +1,4 @@
-package main
+package spacer
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 const filenameTemplate = "dump_%d.tar.gz"
 
-// TempFile is used to create temprorary dump files
+// TempFile is used to create temporary dump files
 type TempFile struct {
 	file *os.File
 	name string

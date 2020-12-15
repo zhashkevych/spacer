@@ -1,4 +1,4 @@
-package main
+package spacer
 
 import (
 	"context"
@@ -9,36 +9,27 @@ import (
 )
 
 const (
-	timeout           = time.Second * 5
+	timeout = time.Second * 5
+	// DigitalOcean Spaces link format
 	spacesURLTemplate = "https://%s.%s/%s"
 )
 
-// Storage is used to save/retrive dump file from remote object storage
-type Storage interface {
-	Save(ctx context.Context, file *TempFile) (string, error)
-}
-
-type SpacesConfig struct {
-	Endpoint  string
-	Bucket    string
-	AccessKey string
-	SecretKey string
-}
-
 type SpacesStorage struct {
-	client *minio.Client
-	cfg    SpacesConfig
+	client   *minio.Client
+	endpoint string
+	bucket   string
 }
 
-func NewSpacesStorage(cfg SpacesConfig) (*SpacesStorage, error) {
-	client, err := minio.New(cfg.Endpoint, cfg.AccessKey, cfg.SecretKey, false)
+func NewSpacesStorage(endpoint, bucket, accessKey, secretKey string) (*SpacesStorage, error) {
+	client, err := minio.New(endpoint, accessKey, secretKey, false)
 	if err != nil {
 		return nil, err
 	}
 
 	return &SpacesStorage{
-		client: client,
-		cfg:    cfg,
+		client:   client,
+		endpoint: endpoint,
+		bucket:   bucket,
 	}, nil
 }
 
@@ -55,7 +46,7 @@ func (s *SpacesStorage) Save(ctx context.Context, file *TempFile) (string, error
 		return "", err
 	}
 	_, err = s.client.PutObjectWithContext(ctx,
-		s.cfg.Bucket, file.Name(), file.Reader(), size, opts)
+		s.bucket, file.Name(), file.Reader(), size, opts)
 	if err != nil {
 		return "", err
 	}
@@ -63,7 +54,6 @@ func (s *SpacesStorage) Save(ctx context.Context, file *TempFile) (string, error
 	return s.generateFileURL(file.Name()), nil
 }
 
-// DigitalOcean Spaces link format
 func (s *SpacesStorage) generateFileURL(filename string) string {
-	return fmt.Sprintf(spacesURLTemplate, s.cfg.Bucket, s.cfg.Endpoint, filename)
+	return fmt.Sprintf(spacesURLTemplate, s.bucket, s.endpoint, filename)
 }
