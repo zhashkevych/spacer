@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const filenameTemplate = "dump_%d.tar.gz"
+const filenameTemplate = "dump_%s.tar.gz"
 
 // TempFile is used to create temporary dump files
 type TempFile struct {
@@ -77,5 +77,5 @@ func (f *TempFile) Remove() error {
 }
 
 func generateFilename() string {
-	return fmt.Sprintf(filenameTemplate, time.Now().Unix())
+	return fmt.Sprintf(filenameTemplate, time.Now().Format(time.RFC3339))
 }
