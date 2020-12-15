@@ -8,7 +8,17 @@ import (
 	"time"
 )
 
-const filenameTemplate = "dump_%s.tar.gz"
+//const filenameTemplate = "dump_%s.tar.gz"
+const filenameTemplate = "dump_%s.sql"
+
+type FileType string
+
+const (
+	FileTypeCustom    = "custom"
+	FileTypeDirectory = "directory"
+	FileTypeTar       = "tar"
+	FileTypePlain     = "plain"
+)
 
 // TempFile is used to create temporary dump files
 type TempFile struct {
@@ -25,8 +35,8 @@ func NewTempFile(enc *Encryptor) (*TempFile, error) {
 
 	return &TempFile{
 		encryptor: enc,
-		file: file,
-		name: file.Name(),
+		file:      file,
+		name:      file.Name(),
 	}, nil
 }
 

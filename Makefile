@@ -12,3 +12,6 @@ build-keygen:
 
 keygen: build-keygen
 	./.bin/keygen
+
+help:
+	sh help.sh

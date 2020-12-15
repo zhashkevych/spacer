@@ -4,18 +4,18 @@ import (
 	"context"
 )
 
-// Database is an interface describing DBMS client that creates dump files
-type Database interface {
+// Dumper is an interface describing DBMS client that creates dump files
+type Dumper interface {
 	Dump(file *TempFile) error
 }
 
-// Storage is used to save/retrive dump file from remote object storage
-type Storage interface {
+// Saver is used to save/retrive dump file from remote object storage
+type Saver interface {
 	Save(ctx context.Context, file *TempFile) (string, error)
 }
 
-// Export creates dump and saves it using provided Database and Storage objects
-func Export(d Database, s Storage, enc *Encryptor) (string, error) {
+// Export creates dump and saves it using provided Database and Saver objects
+func Export(d Dumper, s Saver, enc *Encryptor) (string, error) {
 	dumpFile, err := NewTempFile(enc)
 	if err != nil {
 		return "", err

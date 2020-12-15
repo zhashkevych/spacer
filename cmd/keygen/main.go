@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-// TODO: write to file
-
 const (
 	charset  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+}:><?"
 	filename = "enc.key"

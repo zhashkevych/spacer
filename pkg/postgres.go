@@ -54,7 +54,6 @@ func (p Postgres) getExportOptions(filename string) []string {
 		fmt.Sprintf("-p%s", p.Port),
 		fmt.Sprintf("-U%s", p.Username),
 		"-w",
-		"-Ft",
 		fmt.Sprintf("-f%s", filename),
 	}
 }
