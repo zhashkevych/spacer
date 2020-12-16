@@ -1,3 +1,4 @@
+![alt text](./logo.png)
 # Spacer helps you manage Database dumping/restoring with ease
 Spacer provides functionality to dump Postgres database, encrypt and export it to S3-compatible object storage.
 
