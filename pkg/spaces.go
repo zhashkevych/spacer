@@ -3,13 +3,10 @@ package spacer
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"github.com/minio/minio-go"
 )
 
 const (
-	timeout = time.Second * 5
 	// DigitalOcean Spaces link format
 	spacesURLTemplate = "https://%s.%s/%s"
 )
@@ -38,9 +35,6 @@ func (s *SpacesStorage) Save(ctx context.Context, file *TempFile) (string, error
 		UserMetadata: map[string]string{"x-amz-acl": "public-read"},
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
 	size, err := file.Size()
 	if err != nil {
 		return "", err
@@ -52,6 +46,10 @@ func (s *SpacesStorage) Save(ctx context.Context, file *TempFile) (string, error
 	}
 
 	return s.generateFileURL(file.Name()), nil
+}
+
+func (s *SpacesStorage) GetLatest(ctx context.Context) (string, error) {
+	return "", nil
 }
 
 func (s *SpacesStorage) generateFileURL(filename string) string {

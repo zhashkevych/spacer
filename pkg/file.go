@@ -8,27 +8,18 @@ import (
 	"time"
 )
 
-//const filenameTemplate = "dump_%s.tar.gz"
-const filenameTemplate = "dump_%s.sql"
-
-type FileType string
-
-const (
-	FileTypeCustom    = "custom"
-	FileTypeDirectory = "directory"
-	FileTypeTar       = "tar"
-	FileTypePlain     = "plain"
-)
+const filenameTemplate = "%s.dump_%s.sql"
 
 // TempFile is used to create temporary dump files
 type TempFile struct {
 	encryptor *Encryptor
 	file      *os.File
 	name      string
+	prefix    string
 }
 
-func NewTempFile(enc *Encryptor) (*TempFile, error) {
-	file, err := ioutil.TempFile("", "temp.*.tar.gz")
+func NewTempFile(prefix string, enc *Encryptor) (*TempFile, error) {
+	file, err := ioutil.TempFile("", "temp.*.sql")
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +28,7 @@ func NewTempFile(enc *Encryptor) (*TempFile, error) {
 		encryptor: enc,
 		file:      file,
 		name:      file.Name(),
+		prefix:    prefix,
 	}, nil
 }
 
@@ -72,7 +64,7 @@ func (f *TempFile) Encrypt() error {
 		return err
 	}
 
-	filename := generateFilename()
+	filename := f.generateFilename()
 	f.file, err = os.Create(filename)
 	if err != nil {
 		return err
@@ -86,6 +78,6 @@ func (f *TempFile) Remove() error {
 	return os.Remove(f.name)
 }
 
-func generateFilename() string {
-	return fmt.Sprintf(filenameTemplate, time.Now().Format(time.RFC3339))
+func (f *TempFile) generateFilename() string {
+	return fmt.Sprintf(filenameTemplate, f.prefix, time.Now().Format(time.RFC3339))
 }

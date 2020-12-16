@@ -1,6 +1,7 @@
 package spacer
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -30,31 +31,46 @@ func NewPostgres(host, port, username, password, name string) (*Postgres, error)
 		return p, nil
 	}
 
-	err := p.setPasswordForEnv()
-	return p, err
+	// If password provided, we need to set PGPASSWORD env var
+	return p, p.setPasswordForEnv()
 }
 
 // Dump creates dump file with provided name using pg_dump
-func (p Postgres) Dump(file *TempFile) error {
-	options := p.getExportOptions(file.Name())
-	cmd := exec.Command(pgDumpCommand, options...)
+func (p Postgres) Dump(ctx context.Context, file *TempFile) error {
+	options := p.getDumpOptions(file.Name())
+	cmd := exec.CommandContext(ctx, pgDumpCommand, options...)
 
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Run()
 }
 
-func (p Postgres) getExportOptions(filename string) []string {
+func (p Postgres) getDumpOptions(filename string) []string {
 	return []string{
 		fmt.Sprintf("-d%s", p.Name),
 		fmt.Sprintf("-h%s", p.Host),
 		fmt.Sprintf("-p%s", p.Port),
 		fmt.Sprintf("-U%s", p.Username),
 		"-w",
+		"-Ft",
 		fmt.Sprintf("-f%s", filename),
+	}
+}
+
+func (p Postgres) Restore(ctx context.Context, filename string) error {
+	options := p.getRestoreOptions(filename)
+	cmd := exec.CommandContext(ctx, pgRestoreCommand, options...)
+
+	return cmd.Run()
+}
+
+func (p Postgres) getRestoreOptions(filename string) []string {
+	return []string{
+		fmt.Sprintf("-d%s", p.Name),
+		fmt.Sprintf("-h%s", p.Host),
+		fmt.Sprintf("-p%s", p.Port),
+		fmt.Sprintf("-U%s", p.Username),
+		"-w",
+		"-c",
+		filename,
 	}
 }
 
