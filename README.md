@@ -3,7 +3,82 @@ Spacer provides functionality to dump Postgres database, encrypt and export it t
 
 Also, it can restore Database using latest saved dump file.
 
-Usage:
+Example (dump, encrypt & save):
+
+```go
+package main
+
+import (
+    "context"
+    "github.com/zhashkevych/spacer/pkg"
+    "log"
+    "time"
+    "io/ioutil"
+)
+
+func main() {
+    // Create DB client
+    postgres, err := spacer.NewPostgres("localhost", "5432", "postgres", "qwerty", "postgres")
+    if err != nil {
+        log.Fatalf("failed to create Postgres: %s", err.Error())
+    }
+
+    // Create dump
+    ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+    defer cancel()
+
+    if err := postgres.Dump(ctx, "test_dump.sql"); err != nil {
+        log.Fatalf("failed to create dump: %s", err.Error())
+    }
+
+    // OR use File to create files using following scheme <prefix>.dump_<current_date>.sql
+    dumpFile, err := spacer.NewDumpFile("local")
+    if err != nil {
+        log.Fatalf("failed to create dump file: %s", err.Error())
+    }
+
+    if err := postgres.Dump(ctx, dumpFile.Name()); err != nil {
+        log.Fatalf("failed to create dump: %s", err.Error())
+    }
+
+    // Now you can do anything you want
+    // For example, encrypt and save it to Object Storage
+    encryptor, err := spacer.NewEncryptor([]byte("your-key-should-have-32-bytes!!!"))
+    if err != nil {
+        log.Fatalf("failed to create Encryptor: %s", err.Error())
+    }
+
+    // encrypt file
+    fileData, err := ioutil.ReadAll(dumpFile.Reader())
+    if err != nil {
+        log.Fatalf("failed to read dump file: %s", err.Error())
+    }
+
+    encrypted, err := encryptor.Encrypt(fileData)
+    if err != nil {
+        log.Fatalf("failed to encrypt: %s", err.Error())
+    }
+
+    if err := dumpFile.Write(encrypted); err != nil {
+        log.Fatalf("failed to rewrite encrypted data to file: %s", err.Error())
+    }
+
+    // and save
+    storage, err := spacer.NewSpacesStorage("ams3.digitaloceanspaces.com", "test-bucket", "your-access-key", "your-secret-key")
+    if err != nil {
+        log.Fatalf("failed to create SpacesStorage: %s", err.Error())
+    }
+
+    url, err := storage.Save(ctx, dumpFile)
+    if err != nil {
+        log.Fatalf("failed to save dump file: %s", err.Error())
+    }
+
+    log.Println("Dump exported to", url)
+}
+```
+
+Restore:
 
 ```go
 package main
@@ -15,41 +90,26 @@ import (
 )
 
 func main() {
-	// create DB client
-	postgres, err := spacer.NewPostgres("localhost", "5432", "postgres", "qwerty", "postgres")
-	if err != nil {
-		log.Fatalf("failed to create Postgres: %s", err.Error())
-	}
+    postgres, err := spacer.NewPostgres("localhost", "5432", "postgres", "qwerty", "postgres")
+    if err != nil {
+        log.Fatalf("failed to create Postgres: %s", err.Error())
+    }
 
-	// create object storage client
-	spaces, err := spacer.NewSpacesStorage("ams3.digitaloceanspaces.com", "test-bucket", "yourAccessKey", "yourSecretKey")
-	if err != nil {
-		log.Fatalf("failed to create SpacesStorage: %s", err.Error())
-	}
+    storage, err := spacer.NewSpacesStorage("ams3.digitaloceanspaces.com", "test-bucket", "your-access-key", "your-secret-key")
+    if err != nil {
+        log.Fatalf("failed to create SpacesStorage: %s", err.Error())
+    }
 
-	// used to encrypt / decrypt dump files
-	enc, err := spacer.NewEncryptor([]byte("your-key-should-have-32-bytes!!!"))
-	if err != nil {
-		log.Fatalf("failed to create encryptor %s", err.Error())
-	}
+    ctx := context.Background()
 
-	s := spacer.NewSpacer(postgres, spaces, enc, "prod") // insert prefix in your dump file e.g. prod.dump.*.sql or stage.dump.*.sql
+    dumpFile, err := storage.GetLatest(ctx, "local")
+    if err != nil {
+        log.Fatalf("failed to get latest dump file: %s", err.Error())
+    }
 
-	ctx := context.Background()
-
-	url, err := s.Export(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println("Dump successfully exported to", url)
-
-	err = s.Restore(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Println("Latest dump successfully restored")
+    if err := postgres.Restore(ctx, dumpFile.Name()); err != nil {
+        log.Fatalf("failed to restore latest dump: %s", err.Error())
+    }
 }
 ``` 
 
@@ -87,5 +147,4 @@ GLOBAL OPTIONS:
 ```
 
 ## TODO
-- Implement latest dump fetching
 - Implement dump files compression

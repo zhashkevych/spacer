@@ -36,8 +36,8 @@ func NewPostgres(host, port, username, password, name string) (*Postgres, error)
 }
 
 // Dump creates dump file with provided name using pg_dump
-func (p Postgres) Dump(ctx context.Context, file *TempFile) error {
-	options := p.getDumpOptions(file.Name())
+func (p Postgres) Dump(ctx context.Context, filename string) error {
+	options := p.getDumpOptions(filename)
 	cmd := exec.CommandContext(ctx, pgDumpCommand, options...)
 
 	return cmd.Run()

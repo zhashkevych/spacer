@@ -69,12 +69,12 @@ func runApp(s *spacer.Spacer) {
 				Usage:   "create and export dump",
 				Flags: []cli.Flag{
 					&cli.StringFlag{
-						Name: "prefix",
+						Name:    "prefix",
 						Aliases: []string{"p"},
-						Usage: "set dump file name prefix",
+						Usage:   "set dump file name prefix",
 					},
 				},
-				Action:  func(c *cli.Context) error {
+				Action: func(c *cli.Context) error {
 					log.Println("Starting export")
 					url, err := s.Export(context.Background(), c.String("prefix"))
 					if err != nil {
@@ -90,9 +90,16 @@ func runApp(s *spacer.Spacer) {
 				Name:    "restore",
 				Aliases: []string{"r"},
 				Usage:   "restore from latest dump",
-				Action:  func(c *cli.Context) error {
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    "prefix",
+						Aliases: []string{"p"},
+						Usage:   "set dump file name prefix",
+					},
+				},
+				Action: func(c *cli.Context) error {
 					log.Println("Starting restore")
-					if err := s.Restore(context.Background()); err != nil {
+					if err := s.Restore(context.Background(), c.String("prefix")); err != nil {
 						log.Fatal(err)
 					}
 

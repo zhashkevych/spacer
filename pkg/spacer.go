@@ -3,16 +3,18 @@ package spacer
 import (
 	"context"
 	"github.com/pkg/errors"
+	"io/ioutil"
+	"log"
 )
 
 // Dumper is an interface describing DBMS client that creates dump files
 type Dumper interface {
-	Dump(ctx context.Context, file *TempFile) error
+	Dump(ctx context.Context, filename string) error
 }
 
 // Saver is used to save/retrive dump file from remote object storage
 type Saver interface {
-	Save(ctx context.Context, file *TempFile) (string, error)
+	Save(ctx context.Context, file *DumpFile) (string, error)
 }
 
 // Restorer is an interface describing DBMS client that restores DB from provided dump file
@@ -22,7 +24,7 @@ type Restorer interface {
 
 // Saver is used to save/retrive dump file from remote object storage
 type Dowloader interface {
-	GetLatest(ctx context.Context) (string, error)
+	GetLatest(ctx context.Context, prefix string) (*DumpFile, error)
 }
 
 // DumpRestorer is the interface that groups basic Dumper and Restorer interfaces
@@ -49,20 +51,26 @@ func NewSpacer(d DumpRestorer, s SaveDownloader, enc *Encryptor) *Spacer {
 
 // Export creates dump and saves it using provided Database and Saver objects
 func (s *Spacer) Export(ctx context.Context, prefix string) (string, error) {
-	dumpFile, err := NewTempFile(prefix, s.enc)
+	dumpFile, err := NewDumpFile(prefix)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to create dump file")
 	}
 
 	defer dumpFile.Remove()
 
-	if err := s.dumper.Dump(ctx, dumpFile); err != nil {
+	log.Printf("%s created successfully\n", dumpFile.Name())
+
+	if err := s.dumper.Dump(ctx, dumpFile.Name()); err != nil {
 		return "", errors.WithMessage(err, "failed to dump db")
 	}
 
-	if err := dumpFile.Encrypt(); err != nil {
-		return "", errors.WithMessage(err, "failed to encrypt")
+	log.Print("Dumped successfully")
+
+	if err := s.encryptFile(dumpFile); err != nil {
+		return "", errors.WithMessage(err, "failed to encrypt file")
 	}
+
+	log.Print("Encrypted successfully")
 
 	url, err := s.saver.Save(ctx, dumpFile)
 	if err != nil {
@@ -73,6 +81,27 @@ func (s *Spacer) Export(ctx context.Context, prefix string) (string, error) {
 }
 
 // Restore fetches latest dump from object storage using,
-func (s *Spacer) Restore(ctx context.Context) error {
-	return nil
+func (s *Spacer) Restore(ctx context.Context, prefix string) error {
+	file, err := s.saver.GetLatest(ctx, prefix)
+	if err != nil {
+		return err
+	}
+
+	defer file.Remove()
+
+	return s.dumper.Restore(ctx, file.Name())
+}
+
+func (s *Spacer) encryptFile(f *DumpFile) error {
+	fileData, err := ioutil.ReadAll(f.Reader())
+	if err != nil {
+		return err
+	}
+
+	encrypted, err := s.enc.Encrypt(fileData)
+	if err != nil {
+		return err
+	}
+
+	return f.Write(encrypted)
 }

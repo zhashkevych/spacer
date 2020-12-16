@@ -2,8 +2,11 @@ package spacer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/minio/minio-go"
+	"io/ioutil"
+	"net/http"
 )
 
 const (
@@ -33,7 +36,7 @@ func NewSpacesStorage(endpoint, bucket, accessKey, secretKey string) (*SpacesSto
 }
 
 // Save saves files to Digital Ocean Spaces
-func (s *SpacesStorage) Save(ctx context.Context, file *TempFile) (string, error) {
+func (s *SpacesStorage) Save(ctx context.Context, file *DumpFile) (string, error) {
 	opts := minio.PutObjectOptions{
 		UserMetadata: map[string]string{"x-amz-acl": "public-read"},
 	}
@@ -51,8 +54,86 @@ func (s *SpacesStorage) Save(ctx context.Context, file *TempFile) (string, error
 	return s.generateFileURL(file.Name()), nil
 }
 
-func (s *SpacesStorage) GetLatest(ctx context.Context) (string, error) {
-	return "", nil
+// GetLatest downloads
+func (s *SpacesStorage) GetLatest(ctx context.Context, prefix string) (*DumpFile, error) {
+	name, err := s.getLatestDumpName(ctx, prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	url := s.generateFileURL(name)
+	fileData, err := s.fetch(url)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.createTempFile(fileData)
+}
+
+func (s *SpacesStorage) getLatestDumpName(ctx context.Context, prefix string) (string, error) {
+	objects, err := s.parseObjects(prefix)
+	if err != nil {
+		return "", err
+	}
+
+	latestObject := s.getLatestObject(objects)
+
+	return latestObject.Key, nil
+}
+
+func (s *SpacesStorage) parseObjects(prefix string) ([]minio.ObjectInfo, error) {
+	doneCh := make(chan struct{})
+	defer close(doneCh)
+
+	objects := make([]minio.ObjectInfo, 0)
+	objectsCh := s.client.ListObjects(s.bucket, prefix, true, doneCh)
+	for object := range objectsCh {
+		if object.Err != nil {
+			continue
+		}
+
+		objects = append(objects, object)
+	}
+
+	if len(objects) == 0 {
+		return nil, errors.New("no files found")
+	}
+
+	return objects, nil
+}
+
+func (s *SpacesStorage) getLatestObject(objects []minio.ObjectInfo) minio.ObjectInfo {
+	latestObject := objects[0]
+	for _, object := range objects {
+		if latestObject.LastModified.Unix() < object.LastModified.Unix() {
+			latestObject = object
+		}
+	}
+	return latestObject
+}
+
+func (s *SpacesStorage) fetch(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	return ioutil.ReadAll(resp.Body)
+}
+
+func (* SpacesStorage) createTempFile(data []byte) (*DumpFile, error) {
+	tempFile, err := NewDumpFile("restore")
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tempFile.Write(data); err != nil {
+		return nil, err
+	}
+
+	return tempFile, nil
 }
 
 func (s *SpacesStorage) generateFileURL(filename string) string {
