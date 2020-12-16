@@ -21,34 +21,35 @@ type Restorer interface {
 }
 
 // Saver is used to save/retrive dump file from remote object storage
-type DumpDownloader interface {
+type Dowloader interface {
 	GetLatest(ctx context.Context) (string, error)
 }
 
-type DumperRestorer interface {
+// DumpRestorer is the interface that groups basic Dumper and Restorer interfaces
+type DumpRestorer interface {
 	Dumper
 	Restorer
 }
 
-type SaverDownloader interface {
+// SaveDownloader is the interface that groups basic Saver and Downloader interfaces
+type SaveDownloader interface {
 	Saver
-	DumpDownloader
+	Dowloader
 }
 
 type Spacer struct {
-	dumper DumperRestorer
-	saver  SaverDownloader
+	dumper DumpRestorer
+	saver  SaveDownloader
 	enc    *Encryptor
-	prefix string
 }
 
-func NewSpacer(d DumperRestorer, s SaverDownloader, enc *Encryptor, prefix string) *Spacer {
-	return &Spacer{dumper: d, saver: s, enc: enc, prefix: prefix}
+func NewSpacer(d DumpRestorer, s SaveDownloader, enc *Encryptor) *Spacer {
+	return &Spacer{dumper: d, saver: s, enc: enc}
 }
 
 // Export creates dump and saves it using provided Database and Saver objects
-func (s *Spacer) Export(ctx context.Context) (string, error) {
-	dumpFile, err := NewTempFile(s.prefix, s.enc)
+func (s *Spacer) Export(ctx context.Context, prefix string) (string, error) {
+	dumpFile, err := NewTempFile(prefix, s.enc)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to create dump file")
 	}
@@ -75,4 +76,3 @@ func (s *Spacer) Export(ctx context.Context) (string, error) {
 func (s *Spacer) Restore(ctx context.Context) error {
 	return nil
 }
-

@@ -11,12 +11,14 @@ const (
 	spacesURLTemplate = "https://%s.%s/%s"
 )
 
+// SpacesStorage is a DigitalOcean Spaces client
 type SpacesStorage struct {
 	client   *minio.Client
 	endpoint string
 	bucket   string
 }
 
+// NewSpacesStorage creates new DigitalOcean Spaces client
 func NewSpacesStorage(endpoint, bucket, accessKey, secretKey string) (*SpacesStorage, error) {
 	client, err := minio.New(endpoint, accessKey, secretKey, false)
 	if err != nil {
@@ -30,6 +32,7 @@ func NewSpacesStorage(endpoint, bucket, accessKey, secretKey string) (*SpacesSto
 	}, nil
 }
 
+// Save saves files to Digital Ocean Spaces
 func (s *SpacesStorage) Save(ctx context.Context, file *TempFile) (string, error) {
 	opts := minio.PutObjectOptions{
 		UserMetadata: map[string]string{"x-amz-acl": "public-read"},

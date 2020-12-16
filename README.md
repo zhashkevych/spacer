@@ -62,9 +62,30 @@ Steps:
 1) Run `make keygen` to generate encryption key
 2) Set connection info variables in .env file (look at .env.example)
 3) Run `make build` to create binaries
-4) Run `./.bin/spacer export` to create dump and export it to storage OR `./bin/spacer restore` to restore DB from latest dump in your storage bucket
+4) Run `./.bin/spacer export -p <filename prefix>` to create dump and export it to storage OR `./bin/spacer restore` to restore DB from latest dump in your storage bucket
 
-## Makefile targets
--  `build` - build spacer binaries
--  `build-keygen` - build keygen binaries
--  `keygen` - build & run keygen ro generate encryption key
+Example:
+```shell script
+❯ make build                                                                                                                                                                                                                                 spacer/git/main 
+❯ ./.bin/spacer                                                                                                                                                                                                                             spacer/git/main !
+NAME:
+   CLI tool that helps you export encrypted Postgres dumps to DigitalOcean Spaces - A new cli application
+
+USAGE:
+   spacer [global options] command [command options] [arguments...]
+
+COMMANDS:
+   export, e   create and export dump
+   restore, r  restore from latest dump
+   help, h     Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --help, -h  show help (default: false)
+❯ ./.bin/spacer export -p test                                                                                                                                                                                                              spacer/git/main !
+2020/12/16 15:28:21 Starting export
+2020/12/16 15:28:43 dump successfully exported to https://<bucket>.ams3.digitaloceanspaces.com/test.dump_2020-12-16T15:28:42+02:00.sql
+```
+
+## TODO
+- Implement latest dump fetching
+- Implement dump files compression
