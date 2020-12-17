@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const filenameTemplate = "%s.dump_%d.sql"
+const filenameTemplate = "dump_%d.sql"
 
 // DumpFile is used to create temporary dump files
 type DumpFile struct {
@@ -55,5 +55,10 @@ func (f *DumpFile) Remove() error {
 }
 
 func generateFilename(prefix string) string {
-	return fmt.Sprintf(filenameTemplate, prefix, time.Now().Unix())
+	filename := fmt.Sprintf(filenameTemplate, time.Now().Unix())
+	if prefix == "" {
+		return filename
+	}
+
+	return fmt.Sprintf("%s.%s", prefix, filename)
 }
