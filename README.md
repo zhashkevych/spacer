@@ -4,6 +4,8 @@ Spacer provides functionality to dump Postgres database, encrypt and export it t
 
 Also, it can restore Database using latest saved dump file.
 
+Spacer uses symmetric-key encryption (AES/GCM). You can generate secrey key using keygen, simply run `make keygen`.
+
 Example (dump, encrypt & save):
 
 ```go
