@@ -73,10 +73,15 @@ func runApp(s *spacer.Spacer) {
 						Aliases: []string{"p"},
 						Usage:   "set dump file name prefix",
 					},
+					&cli.StringFlag{
+						Name:    "folder",
+						Aliases: []string{"f"},
+						Usage:   "object storage dumps folder name",
+					},
 				},
 				Action: func(c *cli.Context) error {
 					log.Println("Starting export")
-					url, err := s.Export(context.Background(), c.String("prefix"))
+					url, err := s.Export(context.Background(), c.String("prefix"), c.String("folder"))
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -96,10 +101,15 @@ func runApp(s *spacer.Spacer) {
 						Aliases: []string{"p"},
 						Usage:   "set dump file name prefix",
 					},
+					&cli.StringFlag{
+						Name:    "folder",
+						Aliases: []string{"f"},
+						Usage:   "object storage dumps folder name",
+					},
 				},
 				Action: func(c *cli.Context) error {
 					log.Println("Starting restore")
-					if err := s.Restore(context.Background(), c.String("prefix")); err != nil {
+					if err := s.Restore(context.Background(), c.String("prefix"), c.String("folder")); err != nil {
 						log.Fatal(err)
 					}
 

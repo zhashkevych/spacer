@@ -14,7 +14,7 @@ type Dumper interface {
 
 // Saver is used to save/retrive dump file from remote object storage
 type Saver interface {
-	Save(ctx context.Context, file *DumpFile) (string, error)
+	Save(ctx context.Context, file *DumpFile, folder string) (string, error)
 }
 
 // Restorer is an interface describing DBMS client that restores DB from provided dump file
@@ -24,7 +24,7 @@ type Restorer interface {
 
 // Saver is used to save/retrive dump file from remote object storage
 type Dowloader interface {
-	GetLatest(ctx context.Context, prefix string) (*DumpFile, error)
+	GetLatest(ctx context.Context, prefix, folder string) (*DumpFile, error)
 }
 
 // DumpRestorer is the interface that groups basic Dumper and Restorer interfaces
@@ -50,7 +50,7 @@ func NewSpacer(d DumpRestorer, s SaveDownloader, enc *Encryptor) *Spacer {
 }
 
 // Export creates dump and saves it using provided Database and Saver objects
-func (s *Spacer) Export(ctx context.Context, prefix string) (string, error) {
+func (s *Spacer) Export(ctx context.Context, prefix, folder string) (string, error) {
 	dumpFile, err := NewDumpFile(prefix)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to create dump file")
@@ -72,7 +72,7 @@ func (s *Spacer) Export(ctx context.Context, prefix string) (string, error) {
 
 	log.Print("Encrypted successfully")
 
-	url, err := s.saver.Save(ctx, dumpFile)
+	url, err := s.saver.Save(ctx, dumpFile, folder)
 	if err != nil {
 		return "", errors.WithMessage(err, "failed to save")
 	}
@@ -81,8 +81,8 @@ func (s *Spacer) Export(ctx context.Context, prefix string) (string, error) {
 }
 
 // Restore fetches latest dump from object storage using,
-func (s *Spacer) Restore(ctx context.Context, prefix string) error {
-	file, err := s.saver.GetLatest(ctx, prefix)
+func (s *Spacer) Restore(ctx context.Context, prefix, folder string) error {
+	file, err := s.saver.GetLatest(ctx, prefix, folder)
 	if err != nil {
 		return err
 	}

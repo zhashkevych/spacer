@@ -7,9 +7,11 @@ import (
 	"github.com/minio/minio-go"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 const (
+	timeout = 5 * time.Second
 	// DigitalOcean Spaces link format
 	spacesURLTemplate = "https://%s.%s/%s"
 )
@@ -36,17 +38,22 @@ func NewSpacesStorage(endpoint, bucket, accessKey, secretKey string) (*SpacesSto
 }
 
 // Save saves files to Digital Ocean Spaces
-func (s *SpacesStorage) Save(ctx context.Context, file *DumpFile) (string, error) {
+func (s *SpacesStorage) Save(ctx context.Context, file *DumpFile, folder string) (string, error) {
 	opts := minio.PutObjectOptions{
 		UserMetadata: map[string]string{"x-amz-acl": "public-read"},
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
 
 	size, err := file.Size()
 	if err != nil {
 		return "", err
 	}
+
 	_, err = s.client.PutObjectWithContext(ctx,
-		s.bucket, file.Name(), file.Reader(), size, opts)
+		s.bucket, s.setFolderPath(folder, file.Name()),
+		file.Reader(), size, opts)
 	if err != nil {
 		return "", err
 	}
@@ -55,13 +62,16 @@ func (s *SpacesStorage) Save(ctx context.Context, file *DumpFile) (string, error
 }
 
 // GetLatest downloads
-func (s *SpacesStorage) GetLatest(ctx context.Context, prefix string) (*DumpFile, error) {
+func (s *SpacesStorage) GetLatest(ctx context.Context, prefix, folder string) (*DumpFile, error) {
+	prefix = s.setFolderPath(folder, prefix)
 	name, err := s.getLatestDumpName(ctx, prefix)
 	if err != nil {
 		return nil, err
 	}
 
+	name = s.setFolderPath(folder, name)
 	url := s.generateFileURL(name)
+
 	fileData, err := s.fetch(url)
 	if err != nil {
 		return nil, err
@@ -123,7 +133,7 @@ func (s *SpacesStorage) fetch(url string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-func (* SpacesStorage) createTempFile(data []byte) (*DumpFile, error) {
+func (*SpacesStorage) createTempFile(data []byte) (*DumpFile, error) {
 	tempFile, err := NewDumpFile("restore")
 	if err != nil {
 		return nil, err
@@ -138,4 +148,11 @@ func (* SpacesStorage) createTempFile(data []byte) (*DumpFile, error) {
 
 func (s *SpacesStorage) generateFileURL(filename string) string {
 	return fmt.Sprintf(spacesURLTemplate, s.bucket, s.endpoint, filename)
+}
+
+func (s *SpacesStorage) setFolderPath(folder, filename string) string {
+	if folder != "" {
+		return fmt.Sprintf("%s/%s", folder, filename)
+	}
+	return filename
 }

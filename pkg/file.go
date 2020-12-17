@@ -25,7 +25,7 @@ func NewDumpFile(prefix string) (*DumpFile, error) {
 
 	return &DumpFile{
 		file: file,
-		name: file.Name(),
+		name: filename,
 	}, nil
 }
 
