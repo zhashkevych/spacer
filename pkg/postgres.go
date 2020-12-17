@@ -12,8 +12,8 @@ const (
 	pgPassword = "PGPASSWORD"
 
 	// cli tools that are used to dump and restore postgres dbs
-	pgDumpCommand    = "pg_dump"
-	pgRestoreCommand = "pg_restore"
+	pgDumpCommand = "pg_dump"
+	psqlCommand   = "psql"
 )
 
 // Postgres used to dump postgres DB using pg_dump
@@ -57,7 +57,7 @@ func (p Postgres) getDumpOptions(filename string) []string {
 
 func (p Postgres) Restore(ctx context.Context, filename string) error {
 	options := p.getRestoreOptions(filename)
-	cmd := exec.CommandContext(ctx, pgRestoreCommand, options...)
+	cmd := exec.CommandContext(ctx, psqlCommand, options...)
 
 	return cmd.Run()
 }
@@ -69,7 +69,7 @@ func (p Postgres) getRestoreOptions(filename string) []string {
 		fmt.Sprintf("-p%s", p.Port),
 		fmt.Sprintf("-U%s", p.Username),
 		"-w",
-		"-c",
+		"-f",
 		filename,
 	}
 }

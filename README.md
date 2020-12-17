@@ -117,7 +117,7 @@ func main() {
 ### Use it in your command line:
 Prerequisites:
 - go 1.15
-- pg_dump & pg_restore installed
+- psql & pg_dump installed
 
 Steps:
 1) Run `make keygen` to generate encryption key

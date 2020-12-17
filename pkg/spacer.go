@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"io/ioutil"
-	"log"
 )
 
 // Dumper is an interface describing DBMS client that creates dump files
@@ -58,19 +57,13 @@ func (s *Spacer) Export(ctx context.Context, prefix, folder string) (string, err
 
 	defer dumpFile.Remove()
 
-	log.Printf("%s created successfully\n", dumpFile.Name())
-
 	if err := s.dumper.Dump(ctx, dumpFile.Name()); err != nil {
 		return "", errors.WithMessage(err, "failed to dump db")
 	}
 
-	log.Print("Dumped successfully")
-
 	if err := s.encryptFile(dumpFile); err != nil {
 		return "", errors.WithMessage(err, "failed to encrypt file")
 	}
-
-	log.Print("Encrypted successfully")
 
 	url, err := s.saver.Save(ctx, dumpFile, folder)
 	if err != nil {
@@ -84,10 +77,14 @@ func (s *Spacer) Export(ctx context.Context, prefix, folder string) (string, err
 func (s *Spacer) Restore(ctx context.Context, prefix, folder string) error {
 	file, err := s.saver.GetLatest(ctx, prefix, folder)
 	if err != nil {
-		return err
+		return errors.WithMessage(err, "failed to get latest dump file")
 	}
 
 	defer file.Remove()
+
+	if err := s.decryptFile(file); err != nil {
+		return errors.WithMessage(err, "failed to decrypt file")
+	}
 
 	return s.dumper.Restore(ctx, file.Name())
 }
@@ -104,4 +101,18 @@ func (s *Spacer) encryptFile(f *DumpFile) error {
 	}
 
 	return f.Write(encrypted)
+}
+
+func (s *Spacer) decryptFile(f *DumpFile) error {
+	fileData, err := ioutil.ReadFile(f.Name())
+	if err != nil {
+		return err
+	}
+
+	decrypted, err := s.enc.Decrypt(fileData)
+	if err != nil {
+		return err
+	}
+
+	return f.Write(decrypted)
 }

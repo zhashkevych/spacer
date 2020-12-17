@@ -70,7 +70,6 @@ func (s *SpacesStorage) GetLatest(ctx context.Context, prefix, folder string) (*
 		return nil, err
 	}
 
-	name = s.setFolderPath(folder, name)
 	url := s.generateFileURL(name)
 
 	fileData, err := s.fetch(url)
