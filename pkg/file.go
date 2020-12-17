@@ -55,6 +55,5 @@ func (f *DumpFile) Remove() error {
 }
 
 func generateFilename(prefix string) string {
-	//return fmt.Sprintf(filenameTemplate, prefix, time.Now().Format(time.RFC3339))
 	return fmt.Sprintf(filenameTemplate, prefix, time.Now().Unix())
 }

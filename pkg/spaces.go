@@ -51,14 +51,15 @@ func (s *SpacesStorage) Save(ctx context.Context, file *DumpFile, folder string)
 		return "", err
 	}
 
-	_, err = s.client.PutObjectWithContext(ctx,
-		s.bucket, s.setFolderPath(folder, file.Name()),
-		file.Reader(), size, opts)
+	filePath := s.setFolderPath(folder, file.Name())
+
+	_, err = s.client.PutObjectWithContext(ctx, s.bucket, filePath, file.Reader(), size, opts)
 	if err != nil {
 		return "", err
 	}
 
-	return s.generateFileURL(file.Name()), nil
+
+	return s.generateFileURL(filePath), nil
 }
 
 // GetLatest downloads
