@@ -93,7 +93,7 @@ func (s *Spacer) Restore(ctx context.Context, prefix, folder string) error {
 }
 
 func (s *Spacer) encryptFile(f *DumpFile) error {
-	fileData, err := ioutil.ReadAll(f.Reader())
+	fileData, err := ioutil.ReadFile(f.Name())
 	if err != nil {
 		return err
 	}
