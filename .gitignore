@@ -2,5 +2,6 @@
 .bin
 
 *.tar.gz
+*.sql
 *.key
 .env

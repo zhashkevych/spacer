@@ -51,7 +51,7 @@ func (s *SpacesStorage) Save(ctx context.Context, file *DumpFile, folder string)
 		return "", err
 	}
 
-	filePath := s.setFolderPath(folder, file.Name())
+	filePath := s.setFolderInPath(folder, file.Name())
 
 	_, err = s.client.PutObjectWithContext(ctx, s.bucket, filePath, file.Reader(), size, opts)
 	if err != nil {
@@ -64,8 +64,8 @@ func (s *SpacesStorage) Save(ctx context.Context, file *DumpFile, folder string)
 
 // GetLatest downloads
 func (s *SpacesStorage) GetLatest(ctx context.Context, prefix, folder string) (*DumpFile, error) {
-	prefix = s.setFolderPath(folder, prefix)
-	name, err := s.getLatestDumpName(ctx, prefix)
+	filePath := s.setFolderInPath(folder, prefix)
+	name, err := s.getLatestDumpName(ctx, filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (s *SpacesStorage) GetLatest(ctx context.Context, prefix, folder string) (*
 		return nil, err
 	}
 
-	return s.createTempFile(fileData)
+	return s.createTempFile(prefix, fileData)
 }
 
 func (s *SpacesStorage) getLatestDumpName(ctx context.Context, prefix string) (string, error) {
@@ -133,8 +133,8 @@ func (s *SpacesStorage) fetch(url string) ([]byte, error) {
 	return ioutil.ReadAll(resp.Body)
 }
 
-func (*SpacesStorage) createTempFile(data []byte) (*DumpFile, error) {
-	tempFile, err := NewDumpFile("restore")
+func (*SpacesStorage) createTempFile(prefix string, data []byte) (*DumpFile, error) {
+	tempFile, err := NewDumpFile(prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -150,9 +150,9 @@ func (s *SpacesStorage) generateFileURL(filename string) string {
 	return fmt.Sprintf(spacesURLTemplate, s.bucket, s.endpoint, filename)
 }
 
-func (s *SpacesStorage) setFolderPath(folder, filename string) string {
+func (s *SpacesStorage) setFolderInPath(folder, path string) string {
 	if folder != "" {
-		return fmt.Sprintf("%s/%s", folder, filename)
+		return fmt.Sprintf("%s/%s", folder, path)
 	}
-	return filename
+	return path
 }

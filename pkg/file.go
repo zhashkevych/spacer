@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const filenameTemplate = "dump_%d.sql"
+const filenameTemplate = "dump_%d.tar.gz"
 
 // DumpFile is used to create temporary dump files
 type DumpFile struct {
