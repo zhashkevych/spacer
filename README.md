@@ -72,7 +72,7 @@ func main() {
         log.Fatalf("failed to create SpacesStorage: %s", err.Error())
     }
 
-    url, err := storage.Save(ctx, dumpFile)
+    url, err := storage.Save(ctx, dumpFile, "dumps")
     if err != nil {
         log.Fatalf("failed to save dump file: %s", err.Error())
     }
@@ -105,7 +105,7 @@ func main() {
 
     ctx := context.Background()
 
-    dumpFile, err := storage.GetLatest(ctx, "local")
+    dumpFile, err := storage.GetLatest(ctx, "dumps", "local")
     if err != nil {
         log.Fatalf("failed to get latest dump file: %s", err.Error())
     }
@@ -125,12 +125,11 @@ Steps:
 1) Run `make keygen` to generate encryption key
 2) Set connection info variables in .env file (look at .env.example)
 3) Run `make build` to create binaries
-4) Run `./.bin/spacer export -p <filename prefix>` to create dump and export it to storage OR `./bin/spacer restore` to restore DB from latest dump in your storage bucket
+4) Run `./.bin/spacer export -p <filename prefix> -f <folder name>` to create dump and export it to storage OR `./bin/spacer restore` to restore DB from latest dump in your storage bucket
 
 Example:
 ```shell script
-❯ make build                                                                                                                                                                                                                                 spacer/git/main 
-❯ ./.bin/spacer                                                                                                                                                                                                                             spacer/git/main !
+❯ ./.bin/spacer                                                                                                               spacer/git/main
 NAME:
    CLI tool that helps you export encrypted Postgres dumps to DigitalOcean Spaces - A new cli application
 
@@ -144,9 +143,12 @@ COMMANDS:
 
 GLOBAL OPTIONS:
    --help, -h  show help (default: false)
-❯ ./.bin/spacer export -p test                                                                                                                                                                                                              spacer/git/main !
-2020/12/16 15:28:21 Starting export
-2020/12/16 15:28:43 dump successfully exported to https://<bucket>.ams3.digitaloceanspaces.com/test.dump_2020-12-16T15:28:42+02:00.sql
+❯ ./.bin/spacer export -p local -f dumps                                                                                      spacer/git/main
+2020/12/18 16:22:45 Starting export
+2020/12/18 16:22:47 dump successfully exported to https://<bucket>.ams3.digitaloceanspaces.com/dumps/local.dump_1608301365.tar.gz
+❯ ./.bin/spacer restore -p local -f dumps                                                                                     spacer/git/main
+2020/12/18 16:24:29 Starting restore
+2020/12/18 16:24:30 DB successfully restored from latest dump
 ```
 
 ## TODO
