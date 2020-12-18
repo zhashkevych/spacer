@@ -1,5 +1,5 @@
 ![alt text](./logo.png)
-# Spacer is the CLI tool that helps you manage Database dumping/restoring with ease
+# Spacer is the Golang library & CLI tool that helps you manage Database dumping/restoring with ease
 Spacer provides functionality to dump Postgres database, encrypt and export it to S3-compatible object storage.
 
 Also, it can restore Database using latest saved dump file.
