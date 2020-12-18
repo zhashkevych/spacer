@@ -22,7 +22,7 @@ type Restorer interface {
 }
 
 // Saver is used to save/retrive dump file from remote object storage
-type Dowloader interface {
+type Downloader interface {
 	GetLatest(ctx context.Context, prefix, folder string) (*DumpFile, error)
 }
 
@@ -35,7 +35,7 @@ type DumpRestorer interface {
 // SaveDownloader is the interface that groups basic Saver and Downloader interfaces
 type SaveDownloader interface {
 	Saver
-	Dowloader
+	Downloader
 }
 
 type Spacer struct {
